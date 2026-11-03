@@ -1,0 +1,4 @@
+(executable
+ (public_name when3meet)
+ (name main)
+ (libraries when3meet))
