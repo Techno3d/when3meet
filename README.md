@@ -7,3 +7,5 @@ Arjun Mulchandani abm254
 Abdul Barrie aab322
 
 Luke Thompson lot9
+
+Shadman Syed - ss4485@cornell.edu
