@@ -1,5 +1,7 @@
 # cs3110-group11
 
-John Street
+### Contributors
+
+Arjun Mulchandani abm254
 
 Abdul Barrie aab322
