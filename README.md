@@ -9,3 +9,5 @@ Abdul Barrie aab322
 Luke Thompson lot9
 
 Shadman Syed - ss4485@cornell.edu
+
+Chris Jia - cj523@cornell.edu
