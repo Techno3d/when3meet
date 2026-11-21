@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github Techno3d/when3meet))
 
-(authors "Author Name <author@example.com>")
+(authors "")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers "")
 
 (license LICENSE)
 
