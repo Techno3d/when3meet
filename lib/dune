@@ -1,2 +1,4 @@
 (library
- (name when3meet))
+ (name when3meet)
+ (libraries yojson ppx_deriving_yojson.runtime)
+ (preprocess (pps ppx_deriving_yojson)))
