@@ -1,3 +1,4 @@
 (test
- (name test_when3meet)
+ (name test_calendar_blocks)
+ (modules test_calendar_blocks)
  (libraries when3meet))
