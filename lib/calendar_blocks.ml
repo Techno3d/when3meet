@@ -3,6 +3,8 @@ type event = {
   start_min : int;
   end_min : int;
 }
+(*Make it as an ICal JSON*)
+
 (** One timed event on the day being displayed. Times are minutes after
     midnight. The end time is exclusive. *)
 

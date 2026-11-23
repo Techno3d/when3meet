@@ -1,2 +1,3 @@
 (library
- (name when3meet))
+ (name when3meet)
+ (libraries notty yojson))
