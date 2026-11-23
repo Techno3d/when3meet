@@ -27,7 +27,11 @@ type requests =
   | Authenticate of authenticate
   | Join of join_request
   | Create of create_request
+  | List_session_users
 [@@deriving yojson]
+
+type user_list = string list [@@deriving yojson]
+(** [user_list] is a list of users by their name. *)
 
 (** [session_join_codes] represents the response a server can give. *)
 type session_codes =

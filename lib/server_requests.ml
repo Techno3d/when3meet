@@ -14,10 +14,13 @@ type create_request = {
 }
 [@@deriving yojson]
 
+type user_list = string list [@@deriving yojson]
+
 type requests =
   | Authenticate of authenticate
   | Join of join_request
   | Create of create_request
+  | List_session_users
 [@@deriving yojson]
 
 type session_codes =

@@ -47,6 +47,18 @@ let create_session_handler client (request : Server_requests.create_request)
     session := Some created_session;
     send_status_frame client Server_requests.Success
 
+(** [list_session_users_handler client user session] lists the users of the
+    current session. *)
+let list_session_users_handler client (session : Session.t) =
+  let user_frame =
+    Websocket.Frame.create ~opcode:Websocket.Frame.Opcode.Text
+      ~content:
+        (session.users |> List.map Session.user_name
+       |> Server_requests.user_list_to_yojson |> Yojson.Safe.pretty_to_string)
+      ()
+  in
+  Websocket_lwt_unix.Connected_client.send client user_frame
+
 (** [handle_client client] handles an incoming websocket connection. The
     connection is kept until we recieve a close code from the client. *)
 let handle_client client =
@@ -58,16 +70,13 @@ let handle_client client =
           Server_requests.requests_of_yojson
             (Yojson.Safe.from_string frame.content)
         in
-        begin match request with
-        | Error _ ->
-            let%lwt _ =
+        let%lwt () =
+          match request with
+          | Error _ ->
               send_status_frame client
                 (Server_requests.Malformed_message "Malformed JSON response")
-            in
-            loop user session
-        | Ok request ->
-            let%lwt () =
-              match (request, !user, !session) with
+          | Ok request ->
+              begin match (request, !user, !session) with
               | Server_requests.Authenticate request, None, _ -> begin
                   user := Some (Session.create_user request.user_name);
                   send_status_frame client Server_requests.Success
@@ -83,9 +92,15 @@ let handle_client client =
               | Server_requests.Create _, None, _ -> begin
                   send_status_frame client Server_requests.Not_authenticated
                 end
-            in
-            loop user session
-        end
+              | Server_requests.List_session_users, Some _, Some curr_session ->
+              begin list_session_users_handler client curr_session
+                end
+              | Server_requests.List_session_users, _, _ -> begin
+                  send_status_frame client Server_requests.Nonexistent_session
+                end
+              end
+        in
+        loop user session
     | Websocket.Frame.Opcode.Close -> Lwt.return_unit
     | _ -> loop user session
   in
