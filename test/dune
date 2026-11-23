@@ -1,3 +1,7 @@
 (test
  (name test_when3meet)
- (libraries when3meet ounit2))
+ (libraries when3meet))
+
+(test
+ (name test_server)
+ (libraries when3meet when3meet_server_library ounit2))
