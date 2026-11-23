@@ -19,7 +19,7 @@
  (name when3meet)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+ (depends ocaml yojson ptime (icalendar (= 0.1.13)))
  (tags
   ("add topics" "to describe" your project)))
 
