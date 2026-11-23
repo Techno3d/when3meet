@@ -1,18 +1,54 @@
 open When3meet
 
-let public_address = Unix.ADDR_INET (Unix.inet_addr_of_string "127.0.0.1", 5000)
+(** The port this application starts on. *)
+let port = 5000
+
+(** Testing session for now. *)
 let main_sess = Session.create_session "main"
 
 (** [session_table] stores sessions with their code as key. *)
 let session_table = Hashtbl.create 50
 
-let create_status_frame error =
-  Websocket.Frame.create ~opcode:Websocket.Frame.Opcode.Text
-    ~content:
-      (error |> Server_requests.session_codes_to_yojson
-     |> Yojson.Safe.pretty_to_string)
-    ()
+(** [send_status_frame client status] sends a status message to the given
+    client. *)
+let send_status_frame client status =
+  let frame =
+    Websocket.Frame.create ~opcode:Websocket.Frame.Opcode.Text
+      ~content:
+        (status |> Server_requests.session_codes_to_yojson
+       |> Yojson.Safe.pretty_to_string)
+      ()
+  in
+  Websocket_lwt_unix.Connected_client.send client frame
 
+(** [join_session_handler client request user session] joins a session if the
+    session code exists, and sends a status code. *)
+let join_session_handler client (request : Server_requests.join_request) user
+    session =
+  try
+    let found_session = Hashtbl.find session_table request.session_code in
+    Session.add_user found_session user;
+    session := Some found_session;
+    send_status_frame client Server_requests.Success
+  with Not_found ->
+    send_status_frame client Server_requests.Nonexistent_session
+
+(** [create_session_handler client request user session] creates a session if
+    one with the same name doesn't already exists, and sends a status code. *)
+let create_session_handler client (request : Server_requests.create_request)
+    user session =
+  try
+    let _ = Hashtbl.find session_table request.session_name in
+    send_status_frame client Server_requests.Session_already_exists
+  with Not_found ->
+    let created_session = Session.create_session request.session_name in
+    Session.add_user created_session user;
+    Hashtbl.add session_table request.session_name created_session;
+    session := Some created_session;
+    send_status_frame client Server_requests.Success
+
+(** [handle_client client] handles an incoming websocket connection. The
+    connection is kept until we recieve a close code from the client. *)
 let handle_client client =
   let rec loop user session =
     let%lwt frame = Websocket_lwt_unix.Connected_client.recv client in
@@ -24,97 +60,31 @@ let handle_client client =
         in
         begin match request with
         | Error _ ->
-            let error_frame =
-              create_status_frame
+            let%lwt _ =
+              send_status_frame client
                 (Server_requests.Malformed_message "Malformed JSON response")
             in
-            let%lwt _ =
-              Websocket_lwt_unix.Connected_client.send client error_frame
-            in
-            Lwt.return_unit
+            loop user session
         | Ok request ->
-            begin match (request, !user, !session) with
-            | Server_requests.Authenticate request, None, None -> begin
-                user := Some (Session.create_user request.user_name);
-                let success_frame =
-                  create_status_frame Server_requests.Success
-                in
-                let%lwt () =
-                  Websocket_lwt_unix.Connected_client.send client success_frame
-                in
-                loop user session
-              end
-            | Server_requests.Authenticate _, Some _, _ -> begin
-                let error_frame =
-                  create_status_frame Server_requests.Already_authenticated
-                in
-                let%lwt () =
-                  Websocket_lwt_unix.Connected_client.send client error_frame
-                in
-                loop user session
-              end
-            | Server_requests.Join request, Some curr_user, _ ->
-                begin try
-                  let found_session =
-                    Hashtbl.find session_table request.session_code
-                  in
-                  Session.add_user found_session curr_user;
-                  session := Some found_session;
-                  let success_frame =
-                    create_status_frame Server_requests.Success
-                  in
-                  let%lwt () =
-                    Websocket_lwt_unix.Connected_client.send client
-                      success_frame
-                  in
-                  loop user session
-                with Not_found ->
-                  let error_frame =
-                    create_status_frame Server_requests.Nonexistent_session
-                  in
-                  let%lwt () =
-                    Websocket_lwt_unix.Connected_client.send client error_frame
-                  in
-                  loop user session
+            let%lwt () =
+              match (request, !user, !session) with
+              | Server_requests.Authenticate request, None, _ -> begin
+                  user := Some (Session.create_user request.user_name);
+                  send_status_frame client Server_requests.Success
                 end
-            | Server_requests.Create request, Some curr_user, _ ->
-                begin try
-                  let _ = Hashtbl.find session_table request.session_name in
-                  let error_frame =
-                    create_status_frame Server_requests.Session_already_exists
-                  in
-                  let%lwt () =
-                    Websocket_lwt_unix.Connected_client.send client error_frame
-                  in
-                  loop user session
-                with Not_found ->
-                  let created_session =
-                    Session.create_session request.session_name
-                  in
-                  Session.add_user created_session curr_user;
-                  Hashtbl.add session_table request.session_name created_session;
-                  session := Some created_session;
-                  let success_frame =
-                    create_status_frame Server_requests.Success
-                  in
-                  let%lwt () =
-                    Websocket_lwt_unix.Connected_client.send client
-                      success_frame
-                  in
-                  loop user session
+              | Server_requests.Authenticate _, Some _, _ -> begin
+                  send_status_frame client Server_requests.Already_authenticated
                 end
-            | Server_requests.Join _, None, _
-            | Server_requests.Create _, None, _ -> begin
-                let error_frame =
-                  create_status_frame Server_requests.Not_authenticated
-                in
-                let%lwt () =
-                  Websocket_lwt_unix.Connected_client.send client error_frame
-                in
-                loop user session
-              end
-            | _ -> Lwt.return_unit
-            end
+              | Server_requests.Join request, Some curr_user, _ ->
+                  join_session_handler client request curr_user session
+              | Server_requests.Create request, Some curr_user, _ ->
+                  create_session_handler client request curr_user session
+              | Server_requests.Join _, None, _
+              | Server_requests.Create _, None, _ -> begin
+                  send_status_frame client Server_requests.Not_authenticated
+                end
+            in
+            loop user session
         end
     | Websocket.Frame.Opcode.Close -> Lwt.return_unit
     | _ -> loop user session
@@ -126,7 +96,7 @@ let handle_client client =
 let p_main =
   let%lwt () =
     Websocket_lwt_unix.establish_standard_server
-      ~mode:Conduit_lwt_unix.(`TCP (`Port 5000))
+      ~mode:Conduit_lwt_unix.(`TCP (`Port port))
       handle_client
   in
   let%lwt _ = Lwt_io.printl "hi" in
