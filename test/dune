@@ -1,4 +1,4 @@
-(test
- (name test_block_calendar)
- (modules test_block_calendar)
- (libraries when3meet notty notty.unix))
+(tests
+ (names test_block_calendar test_calendar_blocks test_when3meet)
+ (modules test_block_calendar test_calendar_blocks test_when3meet)
+ (libraries when3meet notty notty.unix ounit2))
