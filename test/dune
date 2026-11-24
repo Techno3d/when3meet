@@ -1,5 +1,5 @@
 (test
- (name test_when3meet)
+ (name test_calendar_tools)
  (libraries when3meet))
 
 (test

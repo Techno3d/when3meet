@@ -12,6 +12,9 @@ bug-reports: "https://github.com/username/reponame/issues"
 depends: [
   "dune" {>= "3.24"}
   "ocaml"
+  "yojson"
+  "ptime"
+  "icalendar" {= "0.1.13"}
   "odoc" {with-doc}
 ]
 build: [
