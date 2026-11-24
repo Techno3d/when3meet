@@ -1,4 +1,4 @@
 (executable
- (public_name when3meet)
+ (public_name when3meet-client)
  (name main)
  (libraries when3meet))
