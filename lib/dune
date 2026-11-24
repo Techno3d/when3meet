@@ -1,3 +1,4 @@
 (library
  (name when3meet)
- (libraries notty yojson))
+ (libraries notty ptime icalendar yojson ppx_deriving_yojson.runtime)
+ (preprocess (pps ppx_deriving_yojson)))

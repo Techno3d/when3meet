@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github Techno3d/when3meet))
 
-(authors "Author Name <author@example.com>")
+(authors "")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers "")
 
 (license LICENSE)
 
@@ -19,7 +19,7 @@
  (name when3meet)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+ (depends ocaml yojson ptime (icalendar (= 0.1.13)))
  (tags
   ("add topics" "to describe" your project)))
 

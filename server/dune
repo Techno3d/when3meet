@@ -1,0 +1,5 @@
+(executable
+ (public_name when3meet-server)
+ (name server)
+ (libraries when3meet when3meet_server_library lwt lwt.unix lwt_ppx unix sqlite3 yojson websocket websocket-lwt-unix)
+ (preprocess (pps lwt_ppx)))
