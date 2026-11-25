@@ -1,3 +1,8 @@
+(tests
+ (names test_block_calendar test_calendar_blocks)
+ (modules test_block_calendar test_calendar_blocks)
+ (libraries when3meet notty notty.unix ounit2))
+
 (test
  (name test_calendar_tools)
  (libraries when3meet))
